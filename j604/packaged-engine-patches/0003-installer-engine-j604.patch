@@ -1,0 +1,104 @@
+--- a/main.py	2026-10-21 11:40:43
++++ b/main.py	2026-10-21 12:33:07
+@@ -5,6 +5,7 @@
+ 
+ import system, osenum, stub, diskutil, osinstall, asahi_firmware, m1n1, bugs
+ import omarchy_firmware
++import omarchy_asahi
+ import omarchy_runtime
+ from util import *
+ 
+@@ -14,6 +15,8 @@
+ # A stub on macOS 26 firmware holds its decrypted recoveryOS and two sets of
+ # personalized boot objects, which do not fit in 2.5GB.
+ STUB_SIZE_MACOS26 = align_down(psize("6GB"), PART_ALIGN)
++# J604 test: the only OS firmware offered is 26.6.2.
++STUB_SIZE = STUB_SIZE_MACOS26
+ 
+ # Minimum free space to leave when resizing, to allow for OS upgrades
+ MIN_FREE_OS = psize("38GB")
+@@ -55,10 +58,12 @@
+     0x6031: "14.8.3",   # T6031, M3 Max (16-core)
+     0x6034: "14.8.3",   # T6034, M3 Max (14-core)
+     0x8140: "26.6",     # T8140, A18 Pro
++    0x8132: "26.6.2",   # T8132, M4 (J604 clean-room developer test)
+ }
+ 
+ DEVICES = {
+     "j700ap":   Device("26.6", False),  # MacBook Neo (A18 Pro, 2026)
++    "j604ap":   Device("26.6.2", False), # MacBook Pro (14-inch, M4, 2024); developer test only
+     "j274ap":   Device("11.0", False),  # Mac mini (M1, 2020)
+     "j293ap":   Device("11.0", False),  # MacBook Pro (13-inch, M1, 2020)
+     "j313ap":   Device("11.0", False),  # MacBook Air (M1, 2020)
+@@ -116,7 +121,7 @@
+          "mBoot-18000.161.10",
+          "25.7.83.0.0,0",
+          False,
+-         ["j613ap", "j615ap", "j700ap"],
++         ["j613ap", "j615ap", "j700ap", "j604ap"],
+          "https://updates.cdn-apple.com/2026SummerFCS/fullrestores/140-75212/A2A24B94-1FC1-45A3-93F7-C51B02AF1F4D/UniversalMac_26.6.2_25G83_Restore.ipsw"),
+     IPSW("12.3.1",
+          "12.1",
+@@ -316,7 +321,7 @@
+         ipsw = self.choose_ipsw(template.get("supported_fw", None))
+         logging.info(f"Chosen IPSW version: {ipsw.version}")
+ 
+-        self.ins = stub.StubInstaller(self.sysinfo, self.dutil, self.osinfo)
++        self.ins = omarchy_asahi.stub_installer(self.sysinfo, self.dutil, self.osinfo)
+         self.ins.load_ipsw(ipsw)
+         self.osins = osinstall.OSInstaller(self.dutil, self.data, template)
+         self.osins.load_package()
+@@ -428,7 +433,7 @@
+ 
+         ipsw = self.choose_ipsw(template.get("supported_fw", None))
+         logging.info(f"Chosen IPSW version: {ipsw.version}")
+-        self.ins = stub.StubInstaller(self.sysinfo, self.dutil, self.osinfo)
++        self.ins = omarchy_asahi.stub_installer(self.sysinfo, self.dutil, self.osinfo)
+         self.ins.load_ipsw(ipsw)
+         return os_size
+ 
+@@ -455,7 +460,7 @@
+         else:
+             p_progress(f"Resuming installation into {self.part.name} ({self.part.label})")
+ 
+-        self.ins = stub.StubInstaller(self.sysinfo, self.dutil, self.osinfo)
++        self.ins = omarchy_asahi.stub_installer(self.sysinfo, self.dutil, self.osinfo)
+         if not self.ins.check_existing_install(osi):
+             op = "upgrade" if upgrade else "repair"
+             p_error(   "The existing installation is missing files.")
+@@ -525,7 +530,7 @@
+             idx = list(choices.keys())[0]
+ 
+         self.part, osi = oses[int(idx)]
+-        self.ins = stub.StubInstaller(self.sysinfo, self.dutil, self.osinfo)
++        self.ins = omarchy_asahi.stub_installer(self.sysinfo, self.dutil, self.osinfo)
+         if not self.ins.check_existing_install(osi):
+             p_error(   "The existing installation is missing files.")
+             p_message(f"This tool can only rebuild firmware on installations that completed the first")
+--- a/omarchy_runtime.py	2026-10-21 12:34:24
++++ b/omarchy_runtime.py	2026-10-21 12:34:24
+@@ -86,7 +86,8 @@
+         }
+         mode = values.get("OMARCHY_ENGINE_MODE")
+         if mode is None:
+-            if values:
++            # The plain J604 test installer passes only the decoder.
++            if set(values) - {"OMARCHY_RESTORE_IMAGE", "OMARCHY_RESTORE_IMAGE_REQUIREMENT"}:
+                 raise EngineRuntimeError("engine mode is missing")
+             return None
+         if mode not in (
+--- a/m1n1.py	2026-10-21 13:55:19
++++ b/m1n1.py	2026-10-21 13:55:19
+@@ -7,8 +7,11 @@
+     with open(src, "rb") as fd:
+         m1n1_data = fd.read()
+ 
++    data = m1n1_data + vars
++    # M4 iBoot only boots a raw boot object whose size is a 64 KiB multiple.
++    data += b"\0" * (-len(data) % 0x10000)
+     with open(dest, "wb") as fd:
+-        fd.write(m1n1_data + vars)
++        fd.write(data)
+ 
+ def extract_vars(src):
+     with open(src, "rb") as fd:

@@ -34,7 +34,8 @@ class WiFiFWCollection(object):
         "sig": "sig",
     }
     DIMS = ["C", "s", "P", "M", "V", "m", "A"]
-    def __init__(self, source_path):
+    def __init__(self, source_path, include_bcm4388c2=False):
+        self.include_bcm4388c2 = include_bcm4388c2
         self.root = FWNode()
         self.load(source_path)
         self.prune()
@@ -46,7 +47,7 @@ class WiFiFWCollection(object):
             if "assert" in dirnames:
                 dirnames.remove("assert")
             # remove broken firmware dir in 14.6.1 IPSW
-            if "C-4388__s-C2" in dirnames:
+            if "C-4388__s-C2" in dirnames and not self.include_bcm4388c2:
                 dirnames.remove("C-4388__s-C2")
             subpath = os.path.relpath(dirpath, source_path)
             for name in sorted(filenames):

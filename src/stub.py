@@ -450,7 +450,8 @@ class StubInstaller(PackageInstaller):
         subprocess.run(["hdiutil", "attach", "-quiet", "-readonly", "-mountpoint", "recovery", img],
                        check=True)
         logging.info("Collecting WiFi firmware")
-        col = WiFiFWCollection("recovery/usr/share/firmware/wifi/")
+        col = WiFiFWCollection("recovery/usr/share/firmware/wifi/",
+                               include_bcm4388c2=self.sysinfo.chip_id == 0x8132)
         pkg.add_files(sorted(col.files()))
         logging.info("Collecting Bluetooth firmware")
         col = BluetoothFWCollection("recovery/usr/share/firmware/bluetooth/")

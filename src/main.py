@@ -8,7 +8,8 @@ from util import *
 
 PART_ALIGN = psize("1MiB")
 
-STUB_SIZE = align_down(psize("2.5GB"), PART_ALIGN)
+# J604 developer installation needs room for macOS 26 recovery and boot objects.
+STUB_SIZE = align_down(psize("6GB"), PART_ALIGN)
 
 # Minimum free space to leave when resizing, to allow for OS upgrades
 MIN_FREE_OS = psize("38GB")
@@ -37,6 +38,7 @@ class Device:
     expert_only: bool
 
 CHIP_MIN_VER = {
+    0x8132: "26.6.2",  # J604 developer bring-up
     0x8103: "11.0",     # T8103, M1
     0x6000: "12.0",     # T6000, M1 Pro
     0x6001: "12.0",     # T6001, M1 Max
@@ -53,6 +55,7 @@ CHIP_MIN_VER = {
 }
 
 DEVICES = {
+    "j604ap": Device("26.6.2", False),  # Experimental branch, not a qualified release
     "j274ap":   Device("11.0", False),  # Mac mini (M1, 2020)
     "j293ap":   Device("11.0", False),  # MacBook Pro (13-inch, M1, 2020)
     "j313ap":   Device("11.0", False),  # MacBook Air (M1, 2020)
@@ -97,6 +100,13 @@ if os.environ.get("ALLOW_VM", None):
     DEVICES["vma2macosap"] = Device("12.0", False)
 
 IPSW_VERSIONS = [
+    IPSW("26.6.2",
+         "26.0",
+         "mBoot-18000.161.10",
+         "25.7.83.0.0,0",
+         False,
+         ["j604ap"],
+         "https://updates.cdn-apple.com/2026SummerFCS/fullrestores/140-75212/A2A24B94-1FC1-45A3-93F7-C51B02AF1F4D/UniversalMac_26.6.2_25G83_Restore.ipsw"),
     IPSW("12.3.1",
          "12.1",
          "iBoot-7459.101.3",

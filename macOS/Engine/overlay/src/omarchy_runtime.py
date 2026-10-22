@@ -86,7 +86,8 @@ class EngineRuntime:
         }
         mode = values.get("OMARCHY_ENGINE_MODE")
         if mode is None:
-            if values:
+            # The J604 developer CLI supplies only the restore-image decoder.
+            if set(values) - {"OMARCHY_RESTORE_IMAGE", "OMARCHY_RESTORE_IMAGE_REQUIREMENT"}:
                 raise EngineRuntimeError("engine mode is missing")
             return None
         if mode not in (

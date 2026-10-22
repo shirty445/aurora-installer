@@ -1,0 +1,33 @@
+--- a/asahi_firmware/wifi.py
++++ b/asahi_firmware/wifi.py
+@@ -34,7 +34,8 @@
+         "sig": "sig",
+     }
+     DIMS = ["C", "s", "P", "M", "V", "m", "A"]
+-    def __init__(self, source_path):
++    def __init__(self, source_path, include_bcm4388c2=False):
++        self.include_bcm4388c2 = include_bcm4388c2
+         self.root = FWNode()
+         self.load(source_path)
+         self.prune()
+@@ -46,7 +47,7 @@
+             if "assert" in dirnames:
+                 dirnames.remove("assert")
+             # remove broken firmware dir in 14.6.1 IPSW
+-            if "C-4388__s-C2" in dirnames:
++            if "C-4388__s-C2" in dirnames and not self.include_bcm4388c2:
+                 dirnames.remove("C-4388__s-C2")
+             subpath = os.path.relpath(dirpath, source_path)
+             for name in sorted(filenames):
+--- a/stub.py
++++ b/stub.py
+@@ -449,7 +449,8 @@
+         subprocess.run(["hdiutil", "attach", "-quiet", "-readonly", "-mountpoint", "recovery", img],
+                        check=True)
+         logging.info("Collecting WiFi firmware")
+-        col = WiFiFWCollection("recovery/usr/share/firmware/wifi/")
++        col = WiFiFWCollection("recovery/usr/share/firmware/wifi/",
++                               include_bcm4388c2=self.sysinfo.chip_id == 0x8132)
+         pkg.add_files(sorted(col.files()))
+         logging.info("Collecting Bluetooth firmware")
+         col = BluetoothFWCollection("recovery/usr/share/firmware/bluetooth/")
