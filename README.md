@@ -1,5 +1,15 @@
 # Aurora Installer
 
+On this `fedora` branch, start the J604 terminal installer from macOS with:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/shirty445/aurora-installer/fedora/install.sh | bash -s -- --fresh
+```
+
+This refreshes the public launcher, signs into GitHub when needed, and builds
+the private J604 kit before interactive installation. `--fresh` clears only
+the launcher's disposable build state. See [`j604/`](j604/README.md) for details.
+
 The native Aurora Linux installer is in [`macOS/`](macOS/README.md). It selects Fedora Aurora Remix, Aurora ALARM or Aurora NixOS with KDE Plasma, GNOME or a minimal system. Signed development images and package feeds are built in their distribution repositories. Download availability, release procedures and hardware qualification are recorded in [aurora-distributions](https://github.com/aurora-silicon/aurora-distributions).
 
 The command-line installer at the repository root is the existing Windows-on-Apple-Silicon work described in [`README.aurora.md`](README.aurora.md). Its code is preserved. The upstream Asahi description below records the original installer and reusable boot/firmware groundwork.
