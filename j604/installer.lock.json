@@ -2,8 +2,8 @@
   "schema": 1,
   "kit": {
     "repository": "shirty445/j604-remix",
-    "revision": "ac3db856a0d98ec642f64b98fd913dca9bf46b39",
-    "tree": "d4559a7209c93f77bd24afd3f8f89bf36fbbaea9"
+    "revision": "858749cd3110759154261469086f5acf8d75a0a4",
+    "tree": "b52c08ea1790641b0c31988b27067a5adade2e47"
   },
   "github_cli": {
     "url": "https://github.com/cli/cli/releases/download/v2.103.0/gh_2.103.0_macOS_arm64.zip",
